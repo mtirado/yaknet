@@ -1,0 +1,33 @@
+/*!
+\mainpage yaknet index
+
+ \section about_sec About yaknet
+ yaknet is an object oriented networking library that will (when finished) allow the user to
+ implement and maintain client/server or peer-to-peer connections using either TCP, UDP,
+ or WebSockets. by default it assumes a packetized message structure, but also allows for
+ non-packetized streaming. messages(events) are registered with a unsigned short ID, and
+ a function pointer that gets called by ProcessEvents. If using a stream this behavior
+ is ignored, and the user must receive and parse all data transferred over the wire.
+
+ \section why_yaknet Why yaknet?
+ I was unable to find any well rounded open source, relatively light weight networking API for my game engine
+ so i decided to crack open an old project i started back in college and make it fully operational.
+ feel free to use this in your own projects, i'm not going to beg for money but i will recommend
+ that an evaluation be made of how much time this saves you, and that you donate to your favorite
+ open source project if you end up profiting from it.
+
+ \subsection examples_sec examples
+ \link ex_echo simple TCP echo server. \endlink
+
+ \subsection todo_sec todo
+ IPV6 support -- would require a new key type for the connection map
+ make websockets more compliant with the RFC.
+
+ \n
+ \n
+ *disclaimer: please note that some class names may be subject to renaming in the future.
+
+ 
+
+
+*/

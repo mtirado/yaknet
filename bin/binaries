@@ -1,0 +1,4 @@
+this is where the test binaries will go
+on unixes use cmake -G 'Unix Makefiles' then make
+
+on windows, install cmake and hope for the best as yaknet is so far untested using winsock

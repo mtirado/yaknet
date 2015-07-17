@@ -1,0 +1,157 @@
+/*!
+
+\page ex_echo Super Simple TCP Echo Server
+\section ex_echo_mainsec relaying a byte
+this example will demonstrate the usage of yaknet to implement a simple application that will relay (8bit)keypresses
+from the client to the server, and then back to the client. the full implementation can be found in echoTest.cpp,
+located in the tests directory.\n
+\n
+
+\subsection ech_globals globals
+including the appropriate header files, and set up global variables and functions for the test.\n
+\code{.cpp}
+#include "NetEvents.h"
+#include "TCPConnection.h"
+#include <iostream>
+using std::cout;
+using std::endl;
+
+//globals
+NetEvents     *netEvents   = 0; //this is a where we register network event callbacks
+TCPConnection *masterConn  = 0; //the base connection is listened on and contains the connection list.
+short          echoEventId = 0; //eventId's are an array index, so 1 event = index 0.
+
+//main functions for server or client
+void Server(short port);    
+void Client(const char *ip, short port);
+\endcode
+\n
+
+\subsection ech_main main
+in this simple example there is only one event the client and server need to handle to relay the data.
+the void * is a NetBuffer * which holds the size of the packet and the eventId in the first 4 bytes (2 shorts).
+i encapsulate the data like this for convenience and it is not required to use NetBuffer as long as you
+maintain the yaknet packet header size in the first 2 bytes (total packet size including header).
+\n
+\code
+//client echo event,  print data to screen
+void cl_echo(Connection *callerId, void *data)
+{
+    NetBuffer *nb = (NetBuffer *)data;
+    nb->SetPosition(4); //move past packet header
+    cout << "echo:    " << nb->ReadByte() << endl;
+}
+
+
+//server echo event, relay data back to client
+void sv_echo(Connection * callerId, void *data)
+{
+    NetBuffer *nb = (NetBuffer *)data;
+    cout << "relay: sv_echo(" << netId << ") - " << nb->ReadByte() << endl;
+    callerId->SendData(nb->GetBuffer(), echoEventId);
+}
+
+
+int main()
+{
+    //instantiate NetEvents (its a singleton at this time, but will probably become more dynamic)
+    NetEvents::InitInstance();
+    netEvents = NetEvents::GetInstance();
+
+    //initialize net events with 1 event for echoEventId
+    if (!netEvents->Init(1))
+        return -1;
+
+    cout <<"run (s)erver or (c)lient ?\n";
+    char c = getch();
+
+    //run on localhost:1337
+    if (c == 'c')
+        Client("0.0.0.0", 1337);
+    else
+        Server(1337);
+
+    return 0;
+}
+\endcode
+\n
+
+\subsection ech_server server
+the server will create its 'master connection' to listen on port 1337 and accept any new connections
+untill the process is terminated. this super simple example will only echo to the most recent client accepted.
+\n
+\code{.cpp}
+void Server(short port)
+{
+    cout << "starting echo server...\n";
+    masterConn = new TCPConnection();
+    masterConn->Listen(port);
+
+    //register echo callback
+    netEvents->RegisterNetEvent(echoEventId, sv_echo);
+
+    while(1)
+    {
+        masterConn->BeginTick(); //updates the servers read set, and handles dropped clients
+        Connection *accepted = masterConn->AcceptConnection(); //check for a new connection
+        if (accepted)
+            cout << "\n\n*new client accepted*\n\n";
+            
+        masterConn->RecvFromAllConnections(); //receives new packets
+        masterConn->ProcessEvents(); //dispatches new events (sv_echo)
+        usleep(4000);
+    }
+}
+\endcode
+\n
+
+\subsection ech_client client
+the client creates a 'master connection', think of it as a starting point to connect to multiple end points.
+then a new connection will be established to the server from the master connection, registers the echo event,
+and then waits for keyboard input. when input is detected, it is captured and wrapped in a NetBuffer. this netbuffer
+is then transferred to the server.  the client constantly recv's and processes events untill the echoEvent is
+seen and executed, or untill there was an error.
+\n
+\code
+void Client(const char *ip, short port)
+{
+    netEvents->RegisterDisconnectEvent(cl_Disconnect);
+    cout <<"starting client\n";
+    masterConn = new TCPConnection();
+    Connection *toServer = masterConn->Connect(ip, port);
+
+    //register echo callback
+    netEvents->RegisterNetEvent(echoEventId, cl_echo);
+
+    NetBuffer nb(MAX_MSG_SIZE);
+
+    while(1)
+    {
+        if (kbhit())
+        {
+            char data = getch();
+            cout << "sending server char(" << data << ")\n";
+
+            //construct the packet
+            nb.ClearBuffer();
+            nb.WriteByte(data); //1 byte
+            nb.Prepare(); //this fills out the size of packet (5 bytes)
+
+            //the send buffer fills out the packets eventId
+            if (!toServer->SendData(nb.GetBuffer(), echoEventId))
+                cout << "send failed\n";
+        }
+        
+        //this could also be masterConn->RecvFromAllConnections()
+        //but would need a disconnect event to break the loop.
+        if (toServer->RecvData() < 0)
+            return;
+
+        //currently only masterConn can process events (it holds the connection list)
+        masterConn->ProcessEvents(); //executes the cl_echo callback
+        usleep(4000);
+    }
+}
+\endcode
+*/
+

@@ -1,0 +1,40 @@
+<html>
+<head>
+	<meta charset="utf-8">
+	<style>
+		body
+		{
+			font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;	
+			background-color:rgb(27, 53, 103); color:rgb(220, 235, 240);
+		}
+	</style>
+<title> websocket test chat </title>
+<script type="text/javascript" src="ByteBuffer.js"></script>
+</head>
+<body>
+	<div id="echo">
+          <div id="echo-config" style="float: left;">
+          	<strong>Name:</strong><br>
+            <input id="wsUsername" size="15">
+            <br>
+            <strong>Location:</strong><br>
+            <input id="wsUri" size="35">
+            <br>
+	            <button id="connect">Connect</button>
+	            <button id="disconnect">Disconnect</button>
+            <br>
+            <br>
+	            <strong>Message:</strong><br>
+	            <input id="sendMessage" size="35" value="Rock it with HTML5 WebSocket">
+            <br>
+            	<button id="send" class="wsButton">Send</button>
+          </div>
+          <div id="echo-log" style="float: left; margin-left: 20px; padding-left: 20px; width: 350px; border-left: solid 1px #cccccc;"> 
+            <div id="consoleLog"></div>
+            <button id="clearLogBut" style="position: absolute; top: 3px;">Clear log</button>
+          </div>
+          <div class="clearfix"></div>
+        </div>
+  	<script type="text/javascript" src="webSockChat.js"></script>
+</body>
+</html>
